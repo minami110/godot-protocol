@@ -18,3 +18,14 @@ func move_to(new_position: Vector2) -> void:
 # [Entity] Impls
 func stop() -> void:
 	print("MockEnemyA stopped")
+
+
+class GoblinKing:
+	# [Entity] Impls
+	func is_dead() -> bool:
+		return false
+
+
+	# [Entity] Impls
+	func take_damage(amount: int) -> void:
+		print("GoblinKing took %d damage" % amount)
