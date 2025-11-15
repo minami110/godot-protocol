@@ -1,9 +1,12 @@
 extends GdUnitTestSuite
+## Assertion 関連のテスト
+## CI 環境だと落ちるのでスキップ設定を追加
 
 @warning_ignore_start("redundant_await")
 
 static func is_running_on_ci() -> bool:
 	return OS.has_environment("CI")
+
 
 @warning_ignore('unused_parameter')
 func before(do_skip: bool = is_running_on_ci()) -> void:
