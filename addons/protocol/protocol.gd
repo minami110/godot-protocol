@@ -127,6 +127,7 @@ static func _verify_user_script(script: Script, protocol: Script) -> bool:
 	return true
 
 
+## キャッシュ管理用の一意なIDを取得, 参照カウンタを増やさないように文字列及び InstanceID を使用する
 static func _get_class_id(obj: Variant) -> int:
 	# ビルトインクラスの場合は String で管理する
 	if typeof(obj) == TYPE_STRING:
@@ -159,50 +160,49 @@ static func _get_protocol_required_methods(protocol: Script) -> Array[Dictionary
 
 	return _protocol_method_cache[id]
 
+# ## オブジェクトのメソッドシグネチャが期待される定義と一致するか検証
+# ## TODO: 4.5 で abstract の場合正しく機能しない問題がある
+# ## https://github.com/godotengine/godot/issues/110818
+# static func _verify_signature(obj: Object, expected_method: Dictionary) -> bool:
+# 	var obj_script: Script = obj.get_script()
+# 	if obj_script == null:
+# 		return false
 
-## オブジェクトのメソッドシグネチャが期待される定義と一致するか検証
-## TODO: 4.5 で abstract の場合正しく機能しない問題がある
-## https://github.com/godotengine/godot/issues/110818
-static func _verify_signature(obj: Object, expected_method: Dictionary) -> bool:
-	var obj_script: Script = obj.get_script()
-	if obj_script == null:
-		return false
+# 	var obj_methods: Array[Dictionary] = obj_script.get_script_method_list()
 
-	var obj_methods: Array[Dictionary] = obj_script.get_script_method_list()
+# 	# オブジェクトから対象メソッドを検索
+# 	var actual_method: Dictionary = { }
+# 	for method_dict in obj_methods:
+# 		if method_dict.name == expected_method.name:
+# 			actual_method = method_dict
+# 			break
 
-	# オブジェクトから対象メソッドを検索
-	var actual_method: Dictionary = { }
-	for method_dict in obj_methods:
-		if method_dict.name == expected_method.name:
-			actual_method = method_dict
-			break
+# 	if actual_method.is_empty():
+# 		return false
 
-	if actual_method.is_empty():
-		return false
+# 	# 引数の数を比較
+# 	var expected_args: Array = expected_method.get("args", [])
+# 	var actual_args: Array = actual_method.get("args", [])
 
-	# 引数の数を比較
-	var expected_args: Array = expected_method.get("args", [])
-	var actual_args: Array = actual_method.get("args", [])
+# 	if expected_args.size() != actual_args.size():
+# 		return false
 
-	if expected_args.size() != actual_args.size():
-		return false
+# 	# 各引数の型を比較
+# 	for i in range(expected_args.size()):
+# 		var expected_arg: Dictionary = expected_args[i]
+# 		var actual_arg: Dictionary = actual_args[i]
 
-	# 各引数の型を比較
-	for i in range(expected_args.size()):
-		var expected_arg: Dictionary = expected_args[i]
-		var actual_arg: Dictionary = actual_args[i]
+# 		# 型が指定されている場合のみチェック
+# 		if expected_arg.has("type") and actual_arg.has("type"):
+# 			if expected_arg.type != actual_arg.type:
+# 				return false
 
-		# 型が指定されている場合のみチェック
-		if expected_arg.has("type") and actual_arg.has("type"):
-			if expected_arg.type != actual_arg.type:
-				return false
+# 	# 返り値の型を比較
+# 	var expected_return: Dictionary = expected_method.get("return", { })
+# 	var actual_return: Dictionary = actual_method.get("return", { })
 
-	# 返り値の型を比較
-	var expected_return: Dictionary = expected_method.get("return", { })
-	var actual_return: Dictionary = actual_method.get("return", { })
+# 	if expected_return.has("type") and actual_return.has("type"):
+# 		if expected_return.type != actual_return.type:
+# 			return false
 
-	if expected_return.has("type") and actual_return.has("type"):
-		if expected_return.type != actual_return.type:
-			return false
-
-	return true
+# 	return true
