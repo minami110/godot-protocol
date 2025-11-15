@@ -11,6 +11,43 @@ static var _verification_cache: Dictionary[int, bool] = { }
 
 #region Public Methods
 
+## Verifies whether an object or class implements the specified protocol.
+##
+## This function checks if the given object/class implements all abstract methods
+## required by the protocol. It supports instances, user-defined classes, built-in
+## classes, and class metatypes.
+##
+## [param obj]: The object or class to verify. Can be:
+## - An instance of a user-defined class (e.g., [code]Goblin.new()[/code])
+## - A user-defined class directly (e.g., [code]Goblin[/code])
+## - An instance of a built-in class (e.g., [code]Node2D.new()[/code])
+## - A built-in class metatype (e.g., [code]Node2D[/code])
+## - A primitive type (returns false)
+##
+## [param protocol]: The protocol class to verify against. Must be an abstract
+## class (marked with [code]@abstract[/code]) containing abstract methods.
+##
+## [return]: [code]true[/code] if the object/class implements all required
+## abstract methods of the protocol; [code]false[/code] otherwise.
+##
+## [b]Usage Examples:[/b]
+## [codeblock]
+## # Verify instance implementation
+## var enemy := Goblin.new()
+## if Protocol.implements(enemy, Entity):
+##     print("Goblin implements Entity protocol")
+##
+## # Verify class directly
+## if Protocol.implements(Goblin, Movable):
+##     print("Goblin implements Movable protocol")
+##
+## # Verify built-in class
+## if Protocol.implements(Node2D, Visible):
+##     print("Node2D implements Visible protocol")
+## [/codeblock]
+##
+## [b]Note:[/b] Results are cached for performance. Verification is done by
+## checking method existence in user-defined classes and built-in classes.
 static func implements(obj: Variant, protocol: Script) -> bool:
 	assert(obj != null, "Object to verify must not be null")
 	assert(protocol != null, "Protocol to verify against must not be null")
@@ -49,6 +86,36 @@ static func implements(obj: Variant, protocol: Script) -> bool:
 	return false
 
 
+## Asserts that an object implements the specified protocol.
+##
+## This function verifies that the given object implements all required abstract
+## methods of the protocol. If the object does not implement the protocol, an
+## assertion error is raised with a descriptive message.
+##
+## [param obj]: The object instance to verify.
+##
+## [param cls]: The protocol class to verify against. Must be an abstract class
+## (marked with [code]@abstract[/code]) containing abstract methods.
+##
+## [b]Behavior:[/b]
+## - If the object implements the protocol: does nothing and returns normally.
+## - If the object does not implement the protocol: triggers an assertion error
+##   with the message [code]"'ClassName' does not implement 'ProtocolName'"[/code].
+##
+## [b]Usage Examples:[/b]
+## [codeblock]
+## # Success case - Goblin implements Entity
+## var goblin := Goblin.new()
+## Protocol.assert_implements(goblin, Entity)  # No error
+##
+## # Failure case - Goblin does not implement Wing
+## var goblin := Goblin.new()
+## Protocol.assert_implements(goblin, Wing)
+## # AssertionError: 'Goblin' does not implement 'Wing'
+## [/codeblock]
+##
+## [b]Note:[/b] This is useful in debug mode for enforcing protocol contracts
+## at runtime. Use [method implements] for conditional checks without errors.
 static func assert_implements(obj: Object, cls: Script) -> void:
 	if implements(obj, cls) == false:
 		var obj_global_class_name: String = obj.get_script().get_global_name()
