@@ -11,18 +11,39 @@ static var _verification_cache: Dictionary[int, bool] = { }
 
 #region Public Methods
 
-static func implements(obj: Object, protocol: Script) -> bool:
+static func implements(obj: Variant, protocol: Script) -> bool:
 	assert(obj != null)
 	assert(protocol != null)
 
+	# ケース: Script（ユーザー定義クラス）が直接渡された場合
+	# 例: Protocol.implements(Goblin, Entity)
+	if obj is Script:
+		return _verify_user_script(obj, protocol)
+
+	# ケース: GDScriptNativeClass (組み込みクラスのメタタイプ) が渡された場合
+	# 例: Protocol.implements(Node2D, Visible)
+	# Note: GDScriptNativeClass の判定: str() が "<GDScriptNativeClass#ID>" の形式になる
+	var obj_str: String = str(obj)
+	if obj_str.begins_with("<GDScriptNativeClass"):
+		var builtin_class_name: String = _extract_class_name_from_metatype(obj)
+		if builtin_class_name.is_empty() == false:
+			return _verify_builtin_class(builtin_class_name, protocol)
+
+		push_warning("Failed to extract class name from GDScriptNativeClass: %s" % obj_str)
+		return false
+
+	# ケース: インスタンスが渡されている場合
+	# 組み込みクラスの場合, get_script() が null を返すのでそれで分岐する
 	var obj_script: Script = obj.get_script()
 
 	# Node クラスなど, Godot 組み込みクラスのインスタンスが渡されている場合
 	if obj_script == null:
 		var builtin_class_name: String = obj.get_class()
 		return _verify_builtin_class(builtin_class_name, protocol)
+
+	# Goblin クラスなど, ユーザー定義クラスのインスタンスが渡されている場合
 	else:
-		return _verify_user_class(obj, protocol)
+		return _verify_user_script(obj_script, protocol)
 
 
 static func assert_implements(obj: Object, cls: Script) -> void:
@@ -35,59 +56,97 @@ static func assert_implements(obj: Object, cls: Script) -> void:
 
 #endregion
 
+static func _extract_class_name_from_metatype(metatype: Variant) -> String:
+	# GDScriptNativeClass オブジェクトからクラス名を抽出する
+	# GDScriptNativeClass は、クラスそのものを表現する特別な型
+	# 直接的にクラス名を取得するメソッドが存在しないため、
+	# メタタイプを新しいインスタンスで作成して、get_class() でクラス名を取得する
+
+	# 新しいインスタンスを作成してクラス名を取得する方法
+	if metatype is Object:
+		var instance: Object = metatype.new()
+		if instance is Object:
+			var instance_class_name: String = instance.get_class()
+			instance.free()
+			return instance_class_name
+
+	return ""
+
+
+## ビルトインクラスのプロトコル実装を検証, この場合 String でクラス名を受け取るので ClassDB で解決を行う
 static func _verify_builtin_class(builtin_class_name: String, protocol: Script) -> bool:
-	var required_methods: = _get_required_methods(protocol)
+	# ペアの検証結果がキャッシュにあるか確認
+	var pair_hash := hash([_get_class_id(builtin_class_name), _get_class_id(protocol)])
+
+	if _verification_cache.has(pair_hash):
+		return _verification_cache[pair_hash]
+
+	var required_methods: = _get_protocol_required_methods(protocol)
 
 	for method_dict in required_methods:
 		var method_name: String = method_dict.name
 
 		# ClassDBでメソッドの存在確認
 		if not ClassDB.class_has_method(builtin_class_name, method_name):
+			_verification_cache[pair_hash] = false
 			return false
 
 		# シグネチャ検証（ClassDB.class_get_method_list使用）
 		# TODO:
 
+	_verification_cache[pair_hash] = true
 	return true
 
 
-static func _verify_user_class(obj: Object, protocol: Script) -> bool:
-	var obj_script: Script = obj.get_script()
-
+static func _verify_user_script(script: Script, protocol: Script) -> bool:
 	# ペアの検証結果がキャッシュにあるか確認
-	var cache_key := hash([obj_script.get_instance_id(), protocol.get_instance_id()])
-	if _verification_cache.has(cache_key):
-		return _verification_cache[cache_key]
+	var pair_hash := hash([_get_class_id(script), _get_class_id(protocol)])
 
-	var required_methods: = _get_required_methods(protocol)
+	if _verification_cache.has(pair_hash):
+		return _verification_cache[pair_hash]
 
-	for method_dict in required_methods:
-		var method_name: String = method_dict.name
+	var required_methods: = _get_protocol_required_methods(protocol)
+	var script_methods: Array[Dictionary] = script.get_script_method_list()
 
-		# メソッドの存在チェック
-		if not obj.has_method(method_name):
-			_verification_cache[cache_key] = false
-			return false
+	# 必須メソッドがすべて存在するか確認
+	for required_method in required_methods:
+		var method_name: String = required_method.name
 
-		# シグネチャの検証
-		# if not _verify_signature(obj, method_dict):
-		# 	_verification_cache[cache_key] = false
-		# 	return false
+		if script_methods.any(
+			func(m: Dictionary) -> bool:
+				return m.name == method_name
+		):
+			continue
+
+		_verification_cache[pair_hash] = false
+		return false
 
 	# 検証成功、結果をキャッシュ
-	_verification_cache[cache_key] = true
+	_verification_cache[pair_hash] = true
 	return true
+
+
+static func _get_class_id(obj: Variant) -> int:
+	# ビルトインクラスの場合は String で管理する
+	if typeof(obj) == TYPE_STRING:
+		return hash(obj)
+
+	# Goblin のような Script クラスが渡された場合の対応
+	elif obj is Script:
+		return obj.get_instance_id()
+
+	# その他
+	return hash(obj)
 
 
 ## プロトコルの必須メソッドをキャッシュから取得または計算
 ## abstract メソッドのリストを返す
 ## 一度アクセスしたらキャッシュに保存される
-static func _get_required_methods(cls: Script) -> Array[Dictionary]:
-	var id := cls.get_instance_id()
+static func _get_protocol_required_methods(protocol: Script) -> Array[Dictionary]:
+	var id := _get_class_id(protocol)
 
 	if not _protocol_method_cache.has(id):
-		var method_list: Array[Dictionary] = cls.get_script_method_list()
-
+		var method_list: Array[Dictionary] = protocol.get_script_method_list()
 		# @abstract メソッドを抽出 する
 		# Return value:
 		# https://docs.godotengine.org/ja/4.x/classes/class_object.html#class-object-method-get-method-list
