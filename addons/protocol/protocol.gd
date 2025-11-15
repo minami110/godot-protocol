@@ -60,7 +60,6 @@ static func _verify_user_class(obj: Object, protocol: Script) -> bool:
 		return _verification_cache[cache_key]
 
 	var required_methods: = _get_required_methods(protocol)
-	print(required_methods)
 
 	for method_dict in required_methods:
 		var method_name: String = method_dict.name
@@ -102,7 +101,8 @@ static func _get_required_methods(cls: Script) -> Array[Dictionary]:
 
 
 ## オブジェクトのメソッドシグネチャが期待される定義と一致するか検証
-## TODO: 4.5 で abstract の場合正しく機能しない問題がある?
+## TODO: 4.5 で abstract の場合正しく機能しない問題がある
+## https://github.com/godotengine/godot/issues/110818
 static func _verify_signature(obj: Object, expected_method: Dictionary) -> bool:
 	var obj_script: Script = obj.get_script()
 	if obj_script == null:
