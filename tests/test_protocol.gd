@@ -49,9 +49,81 @@ func test_クラス直接() -> void:
 	assert_bool(Protocol.implements(Node, Visible)).is_false()
 
 
-func test_Protocolの実装が足りていない() -> void:
-	pass
+func test_キャッシュの一貫性_Script直接とInstance() -> void:
+	# キャッシュをクリア
+	Protocol._verification_cache.clear()
+
+	# Script直接での検証
+	var result1 := Protocol.implements(Goblin, Entity)
+	var cache_size_after_script := Protocol._verification_cache.size()
+
+	# Instanceでの検証（同じキャッシュエントリを使うはず）
+	var result2 := Protocol.implements(Goblin.new(), Entity)
+	var cache_size_after_instance := Protocol._verification_cache.size()
+
+	# 検証結果が同じであることを確認
+	assert_bool(result1).is_equal(result2)
+
+	# キャッシュサイズが増加していないことを確認（同じキャッシュエントリを使用）
+	assert_int(cache_size_after_script).is_equal(1)
+	assert_int(cache_size_after_instance).is_equal(1)
 
 
-func test_二度目のクエリではキャッシュが行われている() -> void:
-	pass
+func test_キャッシュの一貫性_異なるインスタンス() -> void:
+	# キャッシュをクリア
+	Protocol._verification_cache.clear()
+
+	# 最初のインスタンスで検証
+	var result1 := Protocol.implements(Goblin.new(), Entity)
+	var cache_size_after_first := Protocol._verification_cache.size()
+
+	# 2番目のインスタンスで検証（同じクラスだが異なるインスタンス）
+	var result2 := Protocol.implements(Goblin.new(), Entity)
+	var cache_size_after_second := Protocol._verification_cache.size()
+
+	# 検証結果が同じであることを確認
+	assert_bool(result1).is_equal(result2)
+
+	# キャッシュサイズが増加していないことを確認（同じクラスで同じキャッシュエントリを使用）
+	assert_int(cache_size_after_first).is_equal(1)
+	assert_int(cache_size_after_second).is_equal(1)
+
+
+func test_キャッシュの分離() -> void:
+	# キャッシュをクリア
+	Protocol._verification_cache.clear()
+
+	# 異なるProtocolペアで検証
+	Protocol.implements(Goblin, Entity)
+	var cache_size_after_first := Protocol._verification_cache.size()
+	assert_int(cache_size_after_first).is_equal(1)
+
+	Protocol.implements(Goblin, Movable)
+	var cache_size_after_second := Protocol._verification_cache.size()
+	assert_int(cache_size_after_second).is_equal(2)
+
+	# 匿名クラスでも追加
+	var Ork := preload("res://tests/implements/ork.gd")
+	Protocol.implements(Ork, Entity)
+	var cache_size_after_third := Protocol._verification_cache.size()
+	assert_int(cache_size_after_third).is_equal(3)
+
+
+func test_組み込みクラスのキャッシュ() -> void:
+	# キャッシュをクリア
+	Protocol._verification_cache.clear()
+
+	# Script直接での検証
+	var result1 := Protocol.implements(Node2D, Visible)
+	var cache_size_after_script := Protocol._verification_cache.size()
+
+	# Instanceでの検証
+	var result2 := Protocol.implements(auto_free(Node2D.new()), Visible)
+	var cache_size_after_instance := Protocol._verification_cache.size()
+
+	# 検証結果が同じであることを確認
+	assert_bool(result1).is_equal(result2)
+
+	# キャッシュサイズが増加していないことを確認
+	assert_int(cache_size_after_script).is_equal(1)
+	assert_int(cache_size_after_instance).is_equal(1)

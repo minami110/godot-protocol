@@ -15,35 +15,38 @@ static func implements(obj: Variant, protocol: Script) -> bool:
 	assert(obj != null)
 	assert(protocol != null)
 
-	# ケース: Script（ユーザー定義クラス）が直接渡された場合
-	# 例: Protocol.implements(Goblin, Entity)
-	if obj is Script:
-		return _verify_user_script(obj, protocol)
+	if typeof(obj) == TYPE_OBJECT:
+		# ケース: Script（ユーザー定義クラス）が直接渡された場合
+		# 例: Protocol.implements(Goblin, Entity)
+		if obj is Script:
+			return _verify_user_script(obj, protocol)
 
-	# ケース: GDScriptNativeClass (組み込みクラスのメタタイプ) が渡された場合
-	# 例: Protocol.implements(Node2D, Visible)
-	# Note: GDScriptNativeClass の判定: str() が "<GDScriptNativeClass#ID>" の形式になる
-	var obj_str: String = str(obj)
-	if obj_str.begins_with("<GDScriptNativeClass"):
-		var builtin_class_name: String = _extract_class_name_from_metatype(obj)
-		if builtin_class_name.is_empty() == false:
+		# ケース: GDScriptNativeClass (組み込みクラスのメタタイプ) が渡された場合
+		# 例: Protocol.implements(Node2D, Visible)
+		# Note: (obj as Object) とキャストすることで GDScriptNativeClass の判定は行える
+		if (obj as Object).is_class("GDScriptNativeClass"):
+			var builtin_class_name: String = _extract_class_name_from_metatype(obj)
+
+			if builtin_class_name.is_empty() == false:
+				return _verify_builtin_class(builtin_class_name, protocol)
+
+			push_warning("Failed to extract class name from GDScriptNativeClass: %s" % obj)
+			return false
+
+		# ケース: インスタンスが渡されている場合
+		# 組み込みクラスの場合, get_script() が null を返すのでそれで分岐する
+		var obj_script: Script = obj.get_script()
+
+		# Node クラスなど, Godot 組み込みクラスのインスタンスが渡されている場合
+		if obj_script == null:
+			var builtin_class_name: String = obj.get_class()
 			return _verify_builtin_class(builtin_class_name, protocol)
 
-		push_warning("Failed to extract class name from GDScriptNativeClass: %s" % obj_str)
-		return false
+		# Goblin クラスなど, ユーザー定義クラスのインスタンスが渡されている場合
+		else:
+			return _verify_user_script(obj_script, protocol)
 
-	# ケース: インスタンスが渡されている場合
-	# 組み込みクラスの場合, get_script() が null を返すのでそれで分岐する
-	var obj_script: Script = obj.get_script()
-
-	# Node クラスなど, Godot 組み込みクラスのインスタンスが渡されている場合
-	if obj_script == null:
-		var builtin_class_name: String = obj.get_class()
-		return _verify_builtin_class(builtin_class_name, protocol)
-
-	# Goblin クラスなど, ユーザー定義クラスのインスタンスが渡されている場合
-	else:
-		return _verify_user_script(obj_script, protocol)
+	return false
 
 
 static func assert_implements(obj: Object, cls: Script) -> void:
@@ -56,13 +59,9 @@ static func assert_implements(obj: Object, cls: Script) -> void:
 
 #endregion
 
+## GDScriptNativeClass からクラス名を抽出, 現状 API が公開されていないため, やばい方法で行う
+## Issue: https://github.com/godotengine/godot-proposals/issues/9160
 static func _extract_class_name_from_metatype(metatype: Variant) -> String:
-	# GDScriptNativeClass オブジェクトからクラス名を抽出する
-	# GDScriptNativeClass は、クラスそのものを表現する特別な型
-	# 直接的にクラス名を取得するメソッドが存在しないため、
-	# メタタイプを新しいインスタンスで作成して、get_class() でクラス名を取得する
-
-	# 新しいインスタンスを作成してクラス名を取得する方法
 	if metatype is Object:
 		var instance: Object = metatype.new()
 		if instance is Object:
