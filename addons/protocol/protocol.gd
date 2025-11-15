@@ -12,8 +12,8 @@ static var _verification_cache: Dictionary[int, bool] = { }
 #region Public Methods
 
 static func implements(obj: Variant, protocol: Script) -> bool:
-	assert(obj != null)
-	assert(protocol != null)
+	assert(obj != null, "Object to verify must not be null")
+	assert(protocol != null, "Protocol to verify against must not be null")
 
 	if typeof(obj) == TYPE_OBJECT:
 		# ケース: Script（ユーザー定義クラス）が直接渡された場合
@@ -53,9 +53,9 @@ static func assert_implements(obj: Object, cls: Script) -> void:
 	if implements(obj, cls) == false:
 		var obj_global_class_name: String = obj.get_script().get_global_name()
 		if obj_global_class_name.is_empty():
-			assert(false, "Object of '%s' does not implement '%s'." % [obj.get_script().resource_path, cls.get_global_name()])
+			assert(false, "'%s' does not implement '%s'" % [obj.get_script().resource_path, cls.get_global_name()])
 		else:
-			assert(false, "Object of type '%s' does not implement '%s'." % [obj_global_class_name, cls.get_global_name()])
+			assert(false, "'%s' does not implement '%s'" % [obj_global_class_name, cls.get_global_name()])
 
 #endregion
 

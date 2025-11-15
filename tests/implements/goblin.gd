@@ -15,7 +15,7 @@ func move_to(new_position: Vector2) -> void:
 	print("MockEnemyA moving to %s" % str(new_position))
 
 
-# [Entity] Impls
+# [Movable] Impls
 func stop() -> void:
 	print("MockEnemyA stopped")
 
