@@ -1,5 +1,7 @@
 extends GdUnitTestSuite
 
+#region 基本的な実装検証
+
 func test_2つのProtocolを実装している() -> void:
 	var enemy: = Goblin.new()
 	assert_bool(Protocol.implements(enemy, Entity)).is_true()
@@ -48,6 +50,9 @@ func test_クラス直接() -> void:
 	assert_bool(Protocol.implements(CanvasLayer, Visible)).is_true()
 	assert_bool(Protocol.implements(Node, Visible)).is_false()
 
+#endregion
+
+#region キャッシュ動作検証
 
 func test_キャッシュの一貫性_Script直接とInstance() -> void:
 	# キャッシュをクリア
@@ -127,3 +132,5 @@ func test_組み込みクラスのキャッシュ() -> void:
 	# キャッシュサイズが増加していないことを確認
 	assert_int(cache_size_after_script).is_equal(1)
 	assert_int(cache_size_after_instance).is_equal(1)
+
+#endregion

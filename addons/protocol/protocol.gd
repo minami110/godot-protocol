@@ -97,6 +97,7 @@ static func _verify_builtin_class(builtin_class_name: String, protocol: Script) 
 	return true
 
 
+## ユーザー定義クラスのプロトコル実装を検証
 static func _verify_user_script(script: Script, protocol: Script) -> bool:
 	# ペアの検証結果がキャッシュにあるか確認
 	var pair_hash := hash([_get_class_id(script), _get_class_id(protocol)])
@@ -113,6 +114,7 @@ static func _verify_user_script(script: Script, protocol: Script) -> bool:
 
 		if script_methods.any(
 			func(m: Dictionary) -> bool:
+				# TODO: シグネチャ検証を追加
 				return m.name == method_name
 		):
 			continue
