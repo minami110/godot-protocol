@@ -4,7 +4,7 @@
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/minami110/godot-protocol)
 
 GDScript で Protocol（インターフェース）パターンを実現する Godot Engine 4.5 アドオンです。
-ダックタイピングベースの実装検証により、柔軟で安全な抽象化を実現します。
+複数の Interface の実装のようなパターンを表現することができます.
 
 ## 使用パターン
 
@@ -35,7 +35,7 @@ func hide() -> void
 
 ### パターン B: BaseProtocol 継承パターン
 
-`BaseProtocol` を継承して、型安全なラッパーを実装します。Protocol であると同時に, Proxy として動作シます
+`BaseProtocol` を継承して、型安全なラッパーを実装します。Protocol であると同時に, Proxy として動作します.
 ターゲットの参照は `WeakRef` で管理され、安全にアクセスできます。
 
 ```gdscript
@@ -91,7 +91,7 @@ if Protocol.implements(target, Entity):
 ## ProtocolNodeFinder
 
 Nodeツリー内でプロトコルを実装したノードを検索します。
-**BaseProtocol パターンでのみ使用可能です。**
+**BaseProtocol パターンで定義された Protocol のみ使用可能です。**
 
 ### find_first_protocol_in_children(node, protocol, recursive)
 子ノードからプロトコルを実装したノードを検索します。
