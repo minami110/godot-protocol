@@ -1,9 +1,9 @@
-@abstract
 class_name Movable
+extends BaseProtocol
 
-@abstract
-func move_to(new_position: Vector2) -> void
+func move_to(new_position: Vector2) -> void:
+	_call_method(&"move_to", new_position)
 
 
-@abstract
-func stop() -> void
+func stop() -> void:
+	_call_method(&"stop")

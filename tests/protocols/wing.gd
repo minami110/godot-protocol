@@ -1,5 +1,4 @@
-@abstract
 class_name Wing
 
-@abstract
-func fly() -> void
+func fly() -> void:
+	pass

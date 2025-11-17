@@ -1,3 +1,5 @@
+extends Node2D
+
 var _health: int = 100
 
 # [Entity] Impls
@@ -15,4 +17,4 @@ func is_dead() -> bool:
 
 # [Entity] Impls
 func take_damage(amount: int) -> void:
-	print("MockEnemyA took %d damage" % amount)
+	_health -= amount

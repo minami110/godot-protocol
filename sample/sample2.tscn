@@ -1,0 +1,11 @@
+[gd_scene load_steps=3 format=3 uid="uid://bdryk0uudfjtn"]
+
+[ext_resource type="PackedScene" uid="uid://cv1634dce68kr" path="res://sample/sample.tscn" id="1_j72eo"]
+[ext_resource type="Script" uid="uid://cx4edfbuomewr" path="res://sample/entity_impl_npde.gd" id="2_fsnhl"]
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Sample" parent="." instance=ExtResource("1_j72eo")]
+
+[node name="Goblin" type="Node2D" parent="."]
+script = ExtResource("2_fsnhl")
