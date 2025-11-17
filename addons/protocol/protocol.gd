@@ -52,38 +52,39 @@ static func implements(obj: Variant, protocol: Script) -> bool:
 	assert(obj != null, "Object to verify must not be null")
 	assert(protocol != null, "Protocol to verify against must not be null")
 
-	if typeof(obj) == TYPE_OBJECT:
-		# ケース: Script（ユーザー定義クラス）が直接渡された場合
-		# 例: Protocol.implements(Goblin, Entity)
-		if obj is Script:
-			return _verify_user_script(obj, protocol)
+	# Object 以外の型が渡された場合は false を返す
+	if typeof(obj) != TYPE_OBJECT:
+		return false
 
-		# ケース: GDScriptNativeClass (組み込みクラスのメタタイプ) が渡された場合
-		# 例: Protocol.implements(Node2D, Visible)
-		# Note: (obj as Object) とキャストすることで GDScriptNativeClass の判定は行える
-		if (obj as Object).is_class("GDScriptNativeClass"):
-			var builtin_class_name: String = _extract_class_name_from_metatype(obj)
+	# ケース: Script（ユーザー定義クラス）が直接渡された場合
+	# 例: Protocol.implements(Goblin, Entity)
+	if obj is Script:
+		return _verify_user_script(obj, protocol)
 
-			if builtin_class_name.is_empty() == false:
-				return _verify_builtin_class(builtin_class_name, protocol)
+	# ケース: GDScriptNativeClass (組み込みクラスのメタタイプ) が渡された場合
+	# 例: Protocol.implements(Node2D, Visible)
+	# Note: (obj as Object) とキャストすることで GDScriptNativeClass の判定は行える
+	if (obj as Object).is_class("GDScriptNativeClass"):
+		var builtin_class_name: String = _extract_class_name_from_metatype(obj)
 
-			push_warning("Failed to extract class name from GDScriptNativeClass: %s" % obj)
-			return false
-
-		# ケース: インスタンスが渡されている場合
-		# 組み込みクラスの場合, get_script() が null を返すのでそれで分岐する
-		var obj_script: Script = obj.get_script()
-
-		# Node クラスなど, Godot 組み込みクラスのインスタンスが渡されている場合
-		if obj_script == null:
-			var builtin_class_name: String = obj.get_class()
+		if builtin_class_name.is_empty() == false:
 			return _verify_builtin_class(builtin_class_name, protocol)
 
-		# Goblin クラスなど, ユーザー定義クラスのインスタンスが渡されている場合
-		else:
-			return _verify_user_script(obj_script, protocol)
+		push_warning("Failed to extract class name from GDScriptNativeClass: %s" % obj)
+		return false
 
-	return false
+	# ケース: インスタンスが渡されている場合
+	# 組み込みクラスの場合, get_script() が null を返すのでそれで分岐する
+	var obj_script: Script = obj.get_script()
+
+	# Node クラスなど, Godot 組み込みクラスのインスタンスが渡されている場合
+	if obj_script == null:
+		var builtin_class_name: String = obj.get_class()
+		return _verify_builtin_class(builtin_class_name, protocol)
+
+	# Goblin クラスなど, ユーザー定義クラスのインスタンスが渡されている場合
+	else:
+		return _verify_user_script(obj_script, protocol)
 
 
 ## Asserts that an object implements the specified protocol.
@@ -116,13 +117,18 @@ static func implements(obj: Variant, protocol: Script) -> bool:
 ##
 ## [b]Note:[/b] This is useful in debug mode for enforcing protocol contracts
 ## at runtime. Use [method implements] for conditional checks without errors.
-static func assert_implements(obj: Object, cls: Script) -> void:
-	if implements(obj, cls) == false:
-		var obj_global_class_name: String = obj.get_script().get_global_name()
-		if obj_global_class_name.is_empty():
-			assert(false, "'%s' does not implement '%s'" % [obj.get_script().resource_path, cls.get_global_name()])
-		else:
-			assert(false, "'%s' does not implement '%s'" % [obj_global_class_name, cls.get_global_name()])
+static func assert_implements(obj: Object, protocol: Script) -> void:
+	if OS.is_debug_build() == false:
+		return
+
+	if implements(obj, protocol):
+		return
+
+	var obj_global_class_name: String = obj.get_script().get_global_name()
+	if obj_global_class_name.is_empty():
+		assert(false, "'%s' does not implement '%s'" % [obj.get_script().resource_path, protocol.get_global_name()])
+	else:
+		assert(false, "'%s' does not implement '%s'" % [obj_global_class_name, protocol.get_global_name()])
 
 #endregion
 

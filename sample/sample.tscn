@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3 uid="uid://cv1634dce68kr"]
+
+[ext_resource type="Script" uid="uid://dupfj1lcibxlc" path="res://sample/sample.gd" id="1_a6pwa"]
+[ext_resource type="Script" uid="uid://bkcra8nq5coyq" path="res://sample/finder_entity.gd" id="1_jduqb"]
+[ext_resource type="Script" uid="uid://cx4edfbuomewr" path="res://sample/entity_impl_npde.gd" id="3_m3ib7"]
+
+[node name="Sample" type="Node2D"]
+script = ExtResource("1_a6pwa")
+
+[node name="Node2D2" type="Node2D" parent="."]
+
+[node name="FinderEntity" type="Node2D" parent="Node2D2"]
+script = ExtResource("1_jduqb")
+
+[node name="Node2D" type="Node2D" parent="."]
+
+[node name="EntityImplNode" type="Node2D" parent="Node2D"]
+script = ExtResource("3_m3ib7")
