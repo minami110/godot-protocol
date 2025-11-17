@@ -215,20 +215,33 @@ static func _get_class_id(obj: Variant) -> int:
 
 
 ## プロトコルの必須メソッドをキャッシュから取得または計算
-## abstract メソッドのリストを返す
+## _XXX のようなものは無視する
 ## 一度アクセスしたらキャッシュに保存される
 static func _get_protocol_required_methods(protocol: Script) -> Array[Dictionary]:
 	var id := _get_class_id(protocol)
 
 	if not _protocol_method_cache.has(id):
 		var method_list: Array[Dictionary] = protocol.get_script_method_list()
-		# @abstract メソッドを抽出 する
-		# Return value:
-		# https://docs.godotengine.org/ja/4.x/classes/class_object.html#class-object-method-get-method-list
+
+		# print("-----")
+		# for method_dict in method_list:
+		# 	print(method_dict.name)
+		# print("-----")
+
+		# # @abstract メソッドを抽出 する
+		# # Return value:
+		# # https://docs.godotengine.org/ja/4.x/classes/class_object.html#class-object-method-get-method-list
+		# _protocol_method_cache[id] = method_list.filter(
+		# 	func(method_dict: Dictionary) -> bool:
+		# 		return method_dict.flags & METHOD_FLAG_VIRTUAL_REQUIRED != 0
+		# )
+
+		# _XXX で始まるメソッドを除外
 		_protocol_method_cache[id] = method_list.filter(
 			func(method_dict: Dictionary) -> bool:
-				return method_dict.flags & METHOD_FLAG_VIRTUAL_REQUIRED != 0
+				return method_dict.name.begins_with("_") == false
 		)
+
 		_protocol_method_cache[id].make_read_only()
 
 	return _protocol_method_cache[id]

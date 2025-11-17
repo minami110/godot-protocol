@@ -1,6 +1,7 @@
 extends Node2D
 
-@onready var feature_entity: Node = ProtocolNodeFinder.find_first_protocol_in_children(self, Entity)
+@onready var feature_entity: Entity = ProtocolNodeFinder.find_first_protocol_in_children(self, Entity)
+@onready var feature_movable: Movable = ProtocolNodeFinder.find_first_protocol_in_children(self, Movable)
 
 
 func _ready() -> void:
