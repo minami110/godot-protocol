@@ -19,15 +19,29 @@ static func find_first_protocol_in_children(node: Node, protocol: Script, recurs
 
 
 ##
-static func find_first_protocol_in_ancestors(node: Node, protocol: Script) -> BaseProtocol:
-	var current_node: Node = node.get_parent()
+static func find_first_protocol_in_parent(node: Node, protocol: Script, recursive: bool = false) -> BaseProtocol:
+	var current: Node = node.get_parent()
 
-	while current_node != null:
-		if Protocol.implements(current_node, protocol):
-			return protocol.new(current_node)
+	if recursive:
+		while current != null:
+			if Protocol.implements(current, protocol):
+				return protocol.new(current)
 
-		current_node = current_node.get_parent()
+			current = current.get_parent()
+
+	else:
+		if current != null and Protocol.implements(current, protocol):
+			return protocol.new(current)
 
 	return null
+
+
+##
+static func find_first_protocol_in_sibling(node: Node, protocol: Script) -> BaseProtocol:
+	var parent_node: Node = node.get_parent()
+	if parent_node == null:
+		return null
+
+	return find_first_protocol_in_children(parent_node, protocol, false)
 
 #endregion

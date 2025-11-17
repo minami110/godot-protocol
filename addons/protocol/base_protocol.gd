@@ -17,12 +17,6 @@ func _init(target: Variant) -> void:
 	_target = weakref(target)
 
 
-func _get_target() -> Variant:
-	if _target != null:
-		return _target.get_ref()
-	return null
-
-
 func _call_method(method_name: StringName, ...arg_array: Array) -> Variant:
 	if _target:
 		var t: Variant = _target.get_ref()
